@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>You + AI Co‑Create a Scene</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #05070d;
+      --card: #10131f;
+      --accent: #f5b53c;
+      --accent-soft: rgba(245, 181, 60, 0.14);
+      --human: #7be0ff;
+      --ai: #f58fff;
+      --muted: #9aa0c2;
+      --text: #f7f7ff;
+      --danger: #ff6b81;
+      --border: #222638;
+      --mono: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+              "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--mono);
+      background: radial-gradient(circle at top, #151a2c, #04050a 55%);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    h1, h2, h3 {
+      font-weight: 650;
+      letter-spacing: 0.03em;
+    }
+
+    h1 {
+      font-size: clamp(1.6rem, 2.6vw, 2.1rem);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      align-items: center;
+    }
+
+    .pill {
+      border-radius: 999px;
+      padding: 0.25rem 0.75rem;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      border: 1px solid rgba(245,181,60,0.45);
+      color: var(--accent);
+      background: linear-gradient(
+        135deg,
+        rgba(245,181,60,0.14),
+        transparent
+      );
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .pill-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: var(--accent);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 2fr) minmax(0, 1.3fr);
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 840px) {
+      .layout {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .card {
+      background: radial-gradient(circle at top left, #171b32, #090b13 55%);
+      border-radius: 1rem;
+      border: 1px solid var(--border);
+      padding: 1.1rem 1.1rem 1rem;
+      box-shadow: 0 18px 35px rgba(0, 0, 0, 0.35);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 0.75rem;
+      margin-bottom: 0.7rem;
+    }
+
+    .card-subtitle {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--muted);
+      display: flex;
+      gap: 0.4rem;
+      align-items: center;
+    }
+
+    .badge {
+      font-size: 0.7rem;
+      padding: 0.15rem 0.55rem;
+      border-radius: 999px;
+      border: 1px solid rgba(154,160,194,0.5);
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .tag {
+      font-size: 0.7rem;
+      padding: 0.12rem 0.5rem;
+      border-radius: 999px;
+      background: rgba(15, 185, 129, 0.13);
+      color: #7de4b4;
+      border: 1px solid rgba(84, 230, 175, 0.45);
+    }
+
+    .hint {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .fieldset {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 0.8rem;
+    }
+
+    .fieldset label {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+    }
+
+    .options-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+    }
+
+    .option-chip {
+      padding: 0.35rem 0.7rem;
+      border-radius: 999px;
+      border: 1px solid rgba(72, 81, 132, 0.9);
+      background: rgba(9, 12, 32, 0.8);
+      color: var(--text);
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: 0.15s border, 0.15s background, 0.15s transform;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .option-chip span.dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(154, 160, 194, 0.7);
+    }
+
+    .option-chip[data-group="tone"] span.dot {
+      background: var(--accent);
+    }
+
+    .option-chip[data-group="character"] span.dot {
+      background: #7de4b4;
+    }
+
+    .option-chip.selected {
+      border-color: var(--accent);
+      background: rgba(245, 181, 60, 0.14);
+      transform: translateY(-1px);
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 64px;
+      border-radius: 0.75rem;
+      border: 1px solid var(--border);
+      background: rgba(7, 9, 19, 0.96);
+      color: var(--text);
+      font-size: 0.9rem;
+      padding: 0.65rem 0.7rem;
+      resize: vertical;
+      outline: none;
+      line-height: 1.4;
+    }
+
+    textarea::placeholder {
+      color: rgba(154, 160, 194, 0.7);
+    }
+
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(245,181,60,0.35);
+    }
+
+    .button-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 0.35rem;
+    }
+
+    button {
+      border: none;
+      border-radius: 999px;
+      background: linear-gradient(135deg,#f5b53c,#ff7aa2);
+      color: #120915;
+      font-weight: 600;
+      padding: 0.55rem 1.1rem;
+      font-size: 0.88rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      box-shadow: 0 14px 26px rgba(0,0,0,0.45);
+      transition: transform 0.14s, box-shadow 0.14s, filter 0.12s;
+      white-space: nowrap;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.05);
+      box-shadow: 0 16px 32px rgba(0,0,0,0.55);
+    }
+
+    button:active {
+      transform: translateY(0);
+      box-shadow: 0 8px 18px rgba(0,0,0,0.45);
+    }
+
+    button.secondary {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid rgba(72, 81, 132, 0.9);
+      box-shadow: none;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #26d782;
+      box-shadow: 0 0 10px rgba(72, 255, 182, 0.9);
+    }
+
+    .status-label {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .status-label span.code {
+      font-family: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.7rem;
+      color: rgba(201, 208, 255, 0.9);
+    }
+
+    /* Scene output */
+
+    .scene-output {
+      margin-top: 0.7rem;
+      border-radius: 0.85rem;
+      background: radial-gradient(circle at top left, #211933, #090a16 55%);
+      border: 1px solid rgba(93, 87, 137, 0.9);
+      padding: 0.7rem 0.75rem;
+      font-size: 0.86rem;
+      display: none;
+    }
+
+    .scene-output-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.35rem;
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--muted);
+    }
+
+    .legend {
+      display: flex;
+      gap: 0.65rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.72rem;
+    }
+
+    .legend-swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+    }
+
+    .legend-swatch.human {
+      background: var(--human);
+    }
+
+    .legend-swatch.ai {
+      background: var(--ai);
+    }
+
+    .scene-lines {
+      list-style: none;
+      margin-top: 0.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+      max-height: 220px;
+      overflow-y: auto;
+      padding-right: 0.2rem;
+    }
+
+    .scene-lines li {
+      display: flex;
+      align-items: baseline;
+      gap: 0.4rem;
+    }
+
+    .scene-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: rgba(154,160,194,0.9);
+      min-width: 56px;
+    }
+
+    .scene-text {
+      flex: 1;
+    }
+
+    .scene-text span.human {
+      background: linear-gradient(90deg, rgba(123,224,255,0.22), transparent);
+      color: #c8f3ff;
+      border-bottom: 1px solid rgba(123,224,255,0.7);
+    }
+
+    .scene-text span.ai {
+      background: linear-gradient(90deg, rgba(245,143,255,0.22), transparent);
+      color: #ffd8ff;
+      border-bottom: 1px dashed rgba(245,143,255,0.75);
+    }
+
+    .meta-note {
+      margin-top: 0.3rem;
+      font-size: 0.72rem;
+      color: rgba(200, 206, 255, 0.8);
+      font-style: italic;
+    }
+
+    /* Lobby feed */
+
+    .feed-container {
+      border-radius: 0.9rem;
+      border: 1px solid var(--border);
+      background: radial-gradient(circle at top, #181b30, #05060e 55%);
+      padding: 0.75rem 0.8rem;
+      height: 340px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .feed-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 0.75rem;
+    }
+
+    .feed-stream {
+      flex: 1;
+      margin-top: 0.25rem;
+      border-radius: 0.7rem;
+      border: 1px solid rgba(59, 64, 110, 0.9);
+      background: rgba(6, 7, 18, 0.94);
+      padding: 0.35rem 0.5rem;
+      overflow: hidden;
+      position: relative;
+      font-size: 0.8rem;
+    }
+
+    .feed-scroll {
+      position: absolute;
+      inset: 0;
+      overflow-y: auto;
+      padding-right: 0.3rem;
+      scroll-behavior: smooth;
+    }
+
+    .feed-item {
+      padding: 0.3rem 0.15rem;
+      border-bottom: 1px solid rgba(34, 38, 56, 0.75);
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+    }
+
+    .feed-item:last-child {
+      border-bottom: none;
+    }
+
+    .feed-line {
+      color: #e1e4ff;
+    }
+
+    .feed-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+
+    .feed-tag {
+      padding: 0.1rem 0.42rem;
+      border-radius: 999px;
+      border: 1px solid rgba(245,181,60,0.6);
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      font-size: 0.65rem;
+    }
+
+    .feed-overridden {
+      color: var(--danger);
+      font-weight: 500;
+    }
+
+    /* Director's Cut */
+
+    .after-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+      gap: 1.2rem;
+      margin-top: 0.6rem;
+    }
+
+    @media (max-width: 840px) {
+      .after-layout {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .scene-card {
+      border-radius: 0.9rem;
+      border: 1px solid var(--border);
+      background: rgba(5, 6, 16, 0.98);
+      padding: 0.7rem 0.8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .scene-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .scene-card-lines {
+      list-style: none;
+      font-size: 0.83rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+
+    .director-note {
+      margin-top: 0.35rem;
+      font-size: 0.8rem;
+      color: rgba(231, 217, 255, 0.96);
+      padding: 0.55rem 0.6rem;
+      border-radius: 0.6rem;
+      background: linear-gradient(
+        135deg,
+        rgba(245,181,60,0.18),
+        rgba(160,112,255,0.18)
+      );
+      border: 1px solid rgba(245,181,60,0.7);
+    }
+
+    .director-note strong {
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      font-size: 0.72rem;
+      display: block;
+      margin-bottom: 0.3rem;
+    }
+
+    .director-note small {
+      display: block;
+      margin-top: 0.2rem;
+      font-size: 0.72rem;
+      color: rgba(26, 15, 12, 0.8);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="pill">
+      <span class="pill-dot"></span>
+      Lobby Experiment
+      <span style="opacity:0.7;">·</span>
+      You + AI
+    </div>
+    <h1>
+      You + AI Co‑Create
+      <span style="
+        background: linear-gradient(135deg,#f5b53c,#ff7aa2);
+        -webkit-background-clip: text;
+        color: transparent;
+      ">a Scene</span>
+    </h1>
+  </header>
+
+  <section class="layout" aria-label="Before and During">
+    <!-- BEFORE: QR prompt flow -->
+    <article class="card" aria-label="Write with AI in 60 seconds">
+      <div class="card-header">
+        <div>
+          <div class="card-subtitle">
+            <span>Before the show</span>
+            <span>·</span>
+            <span>Try writing with AI in ~60s</span>
+          </div>
+          <h2>Co‑Write a Micro‑Scene</h2>
+        </div>
+        <span class="badge">QR station</span>
+      </div>
+
+      <p class="hint">
+        Step up, scan the QR, and answer three quick questions. Your choices will
+        shape a tiny scene that appears in the lobby feed and might return in the
+        Director’s Cut.
+      </p>
+
+      <form id="scene-form" autocomplete="off">
+        <!-- Tone -->
+        <div class="fieldset">
+          <label>1 · Choose a tone</label>
+          <div class="options-row" id="tone-options">
+            <button type="button" class="option-chip" data-group="tone" data-value="tender">
+              <span class="dot"></span> Tender
+            </button>
+            <button type="button" class="option-chip" data-group="tone" data-value="tense">
+              <span class="dot"></span> Tense
+            </button>
+            <button type="button" class="option-chip" data-group="tone" data-value="absurd">
+              <span class="dot"></span> Absurd
+            </button>
+            <button type="button" class="option-chip" data-group="tone" data-value="bittersweet">
+              <span class="dot"></span> Bittersweet
+            </button>
+          </div>
+        </div>
+
+        <!-- Character detail -->
+        <div class="fieldset">
+          <label>2 · Choose a character detail</label>
+          <div class="options-row" id="character-options">
+            <button type="button" class="option-chip" data-group="character" data-value="stage manager with a secret">
+              <span class="dot"></span> Stage manager with a secret
+            </button>
+            <button type="button" class="option-chip" data-group="character" data-value="usher who hates endings">
+              <span class="dot"></span> Usher who hates endings
+            </button>
+            <button type="button" class="option-chip" data-group="character" data-value="chorus member who lost their voice">
+              <span class="dot"></span> Chorus member who lost their voice
+            </button>
+            <button type="button" class="option-chip" data-group="character" data-value="director stuck in a loop">
+              <span class="dot"></span> Director stuck in a loop
+            </button>
+          </div>
+        </div>
+
+        <!-- Human line -->
+        <div class="fieldset">
+          <label>3 · Add one line of your own</label>
+          <textarea
+            id="human-line"
+            name="humanLine"
+            maxlength="140"
+            placeholder="Type one line of dialogue or stage direction. Example: “(She pauses, rewinds the curtain, and steps out again.)”"
+            required
+          ></textarea>
+        </div>
+
+        <div class="button-row">
+          <button type="submit" id="generate-btn">
+            <span>Generate scene</span>
+            <span aria-hidden="true">⟶</span>
+          </button>
+          <button type="button" class="secondary" id="clear-btn">
+            Clear
+          </button>
+          <div class="status-label">
+            <span class="status-dot"></span>
+            Live feed:
+            <span class="code">connected</span>
+          </div>
+        </div>
+      </form>
+
+      <div class="scene-output" id="scene-output">
+        <div class="scene-output-header">
+          <span>Micro‑scene</span>
+          <div class="legend">
+            <div class="legend-item">
+              <span class="legend-swatch human"></span> You
+            </div>
+            <div class="legend-item">
+              <span class="legend-swatch ai"></span> AI
+            </div>
+          </div>
+        </div>
+        <ul class="scene-lines" id="scene-lines"></ul>
+        <p class="meta-note" id="scene-meta">
+          Watch for the glow: blue is your text, magenta is the AI following your lead.
+        </p>
+      </div>
+    </article>
+
+    <!-- DURING: Lobby feed -->
+    <aside class="card" aria-label="Lobby live feed">
+      <div class="card-header">
+        <div>
+          <div class="card-subtitle">
+            <span>During the show</span>
+            <span>·</span>
+            <span>Live lobby feed</span>
+          </div>
+          <h2>Audience Lines in Motion</h2>
+        </div>
+        <span class="tag">Anonymized</span>
+      </div>
+
+      <p class="hint">
+        A slow scroll of audience + AI lines. When a human overrides the AI’s suggestion,
+        it’s flagged as a moment of choice—just like in performance.
+      </p>
+
+      <div class="feed-container">
+        <div class="feed-header-row">
+          <span class="status-label">
+            <span class="status-dot"></span>
+            Streaming new lines
+          </span>
+          <span class="badge">Lobby screen mode</span>
+        </div>
+
+        <div class="feed-stream">
+          <div class="feed-scroll" id="feed-scroll">
+            <!-- Example items; replace with real data from server -->
+            <div class="feed-item">
+              <div class="feed-line">
+                “I keep resetting the prop table, but the night never restarts.”
+              </div>
+              <div class="feed-meta">
+                <span class="feed-tag">Audience chose this instead</span>
+                <span>Override · bittersweet · stage manager</span>
+              </div>
+            </div>
+            <div class="feed-item">
+              <div class="feed-line">
+                (The chorus mouths the words, but the sound comes from the lights.)
+              </div>
+              <div class="feed-meta">
+                <span class="feed-tag">AI followed the prompt</span>
+                <span>co‑created · absurd · chorus</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p class="hint" style="margin-top:0.35rem;">
+          Project this section full‑screen on a lobby display. New scenes can stream in
+          over a WebSocket or a simple timed refresh.
+        </p>
+      </div>
+    </aside>
+  </section>
+
+  <!-- AFTER: Director's Cut -->
+  <section class="card" aria-label="Director's Cut">
+    <div class="card-header">
+      <div>
+        <div class="card-subtitle">
+          <span>After the show</span>
+          <span>·</span>
+          <span>Director’s Cut</span>
+        </div>
+        <h2>Annotated Audience Scenes</h2>
+      </div>
+      <span class="badge">Final QR</span>
+    </div>
+
+    <p class="hint">
+      A QR on the program or exit doors returns audience members here. Cast and crew
+      annotate 4–6 audience‑generated scenes, pointing out where human choices bent
+      the AI in a new direction.
+    </p>
+
+    <div class="after-layout">
+      <div class="scene-card">
+        <div class="scene-card-header">
+          <span>Scene #12 · Lobby Pod B</span>
+          <span class="tag">Bittersweet · Usher</span>
+        </div>
+        <ul class="scene-card-lines">
+          <li><strong>USHER:</strong> I’m supposed to close the doors, but I like the almost‑ending best.</li>
+          <li><strong>AI:</strong> The audience hovers in the aisle, half in the story, half in the lobby light.</li>
+          <li><strong>AI:</strong> Someone drops a program; no one bends to pick it up.</li>
+          <li><strong>USHER (you):</strong> “If I never stack these seats, the night can’t be over.”</li>
+        </ul>
+        <div class="director-note">
+          <strong>DIRECTOR’S NOTE</strong>
+          The AI originally offered a neat, “And then the house lights came up” button.
+          The human line refused closure, which shifted the tone from nostalgic to
+          quietly defiant.
+          <small>Here, a single audience sentence changed the emotional direction of the beat.</small>
+        </div>
+      </div>
+
+      <div class="scene-card">
+        <div class="scene-card-header">
+          <span>Scene #27 · Lobby Pod D</span>
+          <span class="tag">Absurd · Chorus</span>
+        </div>
+        <ul class="scene-card-lines">
+          <li><strong>CHORUS MEMBER:</strong> My voice called out, but the sound cue answered instead.</li>
+          <li><strong>AI:</strong> A red “MUTE” light glows above the stage like a stubborn halo.</li>
+          <li><strong>AI:</strong> The conductor keeps waving; only the emergency exit sign keeps time.</li>
+          <li><strong>CHORUS (you):</strong> “Maybe the building is tired of hearing us and wants a solo.”</li>
+        </ul>
+        <div class="director-note">
+          <strong>DRAMATURG’S NOTE</strong>
+          The AI leaned into glitchy technology, but this human button personified the
+          theater itself. That tiny shift turned a tech error gag into a character
+          study of the space you’re standing in.
+          <small>Notice how the human override re‑aims the scene at the building, not the singer.</small>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // Simple selection logic for tone & character chips
+    function setupChipGroup(containerId) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      container.addEventListener("click", (event) => {
+        const chip = event.target.closest(".option-chip");
+        if (!chip) return;
+        const group = chip.dataset.group;
+        container
+          .querySelectorAll('.option-chip[data-group="' + group + '"]')
+          .forEach((c) => c.classList.remove("selected"));
+        chip.classList.add("selected");
+      });
+    }
+
+    setupChipGroup("tone-options");
+    setupChipGroup("character-options");
+
+    // Fake AI completion for demo purposes.
+    // Replace generateAICompletion() with a real fetch to your model/API.
+    function generateAICompletion(prompt) {
+      // You would call your AI backend here.
+      // This stub returns 3 AI lines.
+      const templates = [
+        "The lights wait, holding their breath with the rest of us.",
+        "Somewhere backstage, a cue hesitates, then slips the wrong way.",
+        "Tonight, even the exit signs seem unsure about letting go."
+      ];
+      return templates;
+    }
+
+    const form = document.getElementById("scene-form");
+    const sceneOutput = document.getElementById("scene-output");
+    const sceneLines = document.getElementById("scene-lines");
+    const generateBtn = document.getElementById("generate-btn");
+    const clearBtn = document.getElementById("clear-btn");
+    const humanLineInput = document.getElementById("human-line");
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const toneChip = document.querySelector('.option-chip[data-group="tone"].selected');
+      const characterChip = document.querySelector('.option-chip[data-group="character"].selected');
+      const humanLine = humanLineInput.value.trim();
+
+      if (!toneChip || !characterChip || !humanLine) {
+        alert("Pick a tone, a character detail, and add one line to co‑create the scene.");
+        return;
+      }
+
+      const tone = toneChip.dataset.value;
+      const character = characterChip.dataset.value;
+
+      generateBtn.disabled = true;
+      generateBtn.textContent = "Generating…";
+
+      // Build prompt text for your model
+      const prompt = `
+You are helping an audience member co‑write a 4–5 line micro‑scene for a live performance lobby experiment.
+
+Tone: ${tone}
+Character detail: ${character}
+Audience line (must appear exactly once as one of the lines): "${humanLine}"
+
+Write 3 additional lines that respond to the audience line, in stage-friendly language.
+Return only the 3 AI lines, no numbering, no quotes.
+      `.trim();
+
+      // Call your AI backend here.
+      // For now we use a stub.
+      let aiLines;
+      try {
+        aiLines = generateAICompletion(prompt);
+      } catch (e) {
+        console.error(e);
+        alert("The AI stumbled for a moment. Try again in a second.");
+        generateBtn.disabled = false;
+        generateBtn.textContent = "Generate scene";
+        return;
+      }
+
+      // Render human + AI lines with color coding
+      sceneLines.innerHTML = "";
+
+      const allLines = [
+        { who: "You", text: humanLine, type: "human" },
+        ...aiLines.map((t) => ({ who: "AI", text: t, type: "ai" }))
+      ];
+
+      allLines.forEach((entry) => {
+        const li = document.createElement("li");
+        const label = document.createElement("span");
+        label.className = "scene-label";
+        label.textContent = entry.who;
+        const textSpan = document.createElement("span");
+        textSpan.className = "scene-text";
+        const inner = document.createElement("span");
+        inner.className = entry.type;
+        inner.textContent = entry.text;
+        textSpan.appendChild(inner);
+        li.appendChild(label);
+        li.appendChild(textSpan);
+        sceneLines.appendChild(li);
+      });
+
+      sceneOutput.style.display = "block";
+      generateBtn.disabled = false;
+      generateBtn.textContent = "Generate scene";
+
+      // TODO: send scene to server so it can appear in the lobby feed (via WebSocket)
+      // e.g., fetch("/api/scene", { method:"POST", body: JSON.stringify({ tone, character, humanLine, aiLines }) })
+    });
+
+    clearBtn.addEventListener("click", () => {
+      humanLineInput.value = "";
+      sceneOutput.style.display = "none";
+      sceneLines.innerHTML = "";
+      document
+        .querySelectorAll(".option-chip.selected")
+        .forEach((chip) => chip.classList.remove("selected"));
+    });
+
+    // Auto-scroll feed to bottom when new items are added.
+    const feedScroll = document.getElementById("feed-scroll");
+    function scrollFeedToBottom() {
+      if (!feedScroll) return;
+      feedScroll.scrollTop = feedScroll.scrollHeight;
+    }
+    scrollFeedToBottom();
+
+    // Example: fake new items every 15 seconds in demo mode
+    const demoLines = [
+      {
+        text: "“If the cue never lands, maybe we get to live in the build‑up.”",
+        meta: "Override · tense · director",
+        overridden: true
+      },
+      {
+        text: "(House lights flicker, but the audience refuses to stand.)",
+        meta: "co‑created · tender · usher",
+        overridden: false
+      }
+    ];
+
+    let demoIndex = 0;
+    setInterval(() => {
+      if (!feedScroll) return;
+      const data = demoLines[demoIndex % demoLines.length];
+      const item = document.createElement("div");
+      item.className = "feed-item";
+      const line = document.createElement("div");
+      line.className = "feed-line";
+      line.textContent = data.text;
+      const meta = document.createElement("div");
+      meta.className = "feed-meta";
+
+      const tag = document.createElement("span");
+      tag.className = "feed-tag";
+      tag.textContent = data.overridden
+        ? "Audience chose this instead"
+        : "AI followed the prompt";
+
+      const spanMeta = document.createElement("span");
+      spanMeta.textContent = data.meta;
+
+      meta.appendChild(tag);
+      meta.appendChild(spanMeta);
+      item.appendChild(line);
+      item.appendChild(meta);
+      feedScroll.appendChild(item);
+      scrollFeedToBottom();
+      demoIndex++;
+    }, 15000);
+  </script>
+</body>
+</html>
